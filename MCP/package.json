@@ -1,0 +1,35 @@
+{
+  "name": "lookin-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Lookin iOS view inspection over the Peertalk protocol",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "lookin-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "dev": "npx tsx src/index.ts"
+  },
+  "keywords": [
+    "lookin",
+    "mcp",
+    "ios",
+    "peertalk"
+  ],
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "bplist-creator": "^0.1.1",
+    "bplist-parser": "^0.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0",
+    "esbuild": "^0.20.0",
+    "@types/node": "^20.0.0"
+  }
+}
