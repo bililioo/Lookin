@@ -8,6 +8,20 @@ This package lives inside the Lookin repository and is intended to be built from
 
 Your iOS app must integrate [LookinServer](https://github.com/QMUI/LookinServer) in Debug builds.
 
+If you need the MCP server and the Lookin macOS app to connect to the same iOS app at the same time, use a LookinServer version that supports multiple clients, for example:
+
+```text
+https://github.com/bililioo/LookinServer.git
+```
+
+Branch:
+
+```text
+develop
+```
+
+After integrating or updating LookinServer, rebuild and run the target iOS app.
+
 ```ruby
 pod 'LookinServer', :configurations => ['Debug']
 ```
@@ -21,7 +35,7 @@ pod 'LookinServer', :subspecs => ['Swift'], :configurations => ['Debug']
 Swift Package Manager:
 
 ```text
-https://github.com/QMUI/LookinServer/
+https://github.com/bililioo/LookinServer.git
 ```
 
 ## Build
@@ -32,7 +46,38 @@ npm install
 npm run build
 ```
 
+The build output is:
+
+```text
+Lookin/MCP/dist/index.js
+```
+
 ## Configure an MCP Client
+
+### Codex
+
+Use the Codex CLI to add the MCP server:
+
+```bash
+codex mcp add lookin -- node /absolute/path/to/Lookin/MCP/dist/index.js
+```
+
+If a previous `lookin` MCP server already exists, remove it first:
+
+```bash
+codex mcp remove lookin
+codex mcp add lookin -- node /absolute/path/to/Lookin/MCP/dist/index.js
+```
+
+Check the configuration:
+
+```bash
+codex mcp get lookin
+```
+
+Restart Codex or open a new thread after changing MCP configuration.
+
+### Generic MCP Config
 
 Use the built `dist/index.js` file:
 
@@ -102,5 +147,9 @@ lookin_list_devices -> lookin_list_apps -> lookin_connect_app -> lookin_get_hier
 Simulator apps are reached through `127.0.0.1:47164-47169`.
 
 USB device apps are reached through usbmuxd on ports `47175-47179`.
+
+The MCP server does not replace LookinServer. The target iOS app must be running and must include LookinServer in a Debug build.
+
+To use this MCP server together with the Lookin macOS app, make sure the iOS app uses a multi-client-capable LookinServer. Older LookinServer versions may keep only the latest connection, causing the Lookin app and MCP server to disconnect each other.
 
 The implementation was written for this repository using the Lookin client protocol in `LookinClient/Connection`, with [xiaoxiaowesley/lookin-mcp-peertalk](https://github.com/xiaoxiaowesley/lookin-mcp-peertalk) as a reference.
