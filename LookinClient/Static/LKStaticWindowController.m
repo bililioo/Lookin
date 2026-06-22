@@ -128,7 +128,7 @@
                 
                 BOOL isTheSameApp = [[LKAppsManager sharedInstance].inspectingApp.appInfo isEqualToAppInfo:app.appInfo];
                 
-                [[app fetchHierarchyData] subscribeNext:^(LookinHierarchyInfo *info) {
+                [[[app fetchHierarchyData] deliverOnMainThread] subscribeNext:^(LookinHierarchyInfo *info) {
                     [self.viewController.progressView finishWithCompletion:nil];
                     [LKAppsManager sharedInstance].inspectingApp = app;
                     [[LKStaticHierarchyDataSource sharedInstance] reloadWithHierarchyInfo:info keepState:isTheSameApp];
@@ -237,7 +237,7 @@
     
     [LKPerformanceReporter.sharedInstance willStartReload];
     @weakify(self);
-    [[app fetchHierarchyData] subscribeNext:^(LookinHierarchyInfo *info) {
+    [[[app fetchHierarchyData] deliverOnMainThread] subscribeNext:^(LookinHierarchyInfo *info) {
         [self.viewController.progressView finishWithCompletion:nil];
         [[LKStaticHierarchyDataSource sharedInstance] reloadWithHierarchyInfo:info keepState:YES];
         self.isFetchingHierarchy = NO;

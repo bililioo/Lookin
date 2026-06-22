@@ -190,7 +190,7 @@
     [LKPerformanceReporter.sharedInstance willStartReload];
     
     @weakify(self);
-    [[app fetchHierarchyData] subscribeNext:^(LookinHierarchyInfo *info) {
+    [[[app fetchHierarchyData] deliverOnMainThread] subscribeNext:^(LookinHierarchyInfo *info) {
         @strongify(self);
         
         if (!info) {
