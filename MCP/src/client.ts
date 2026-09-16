@@ -17,6 +17,7 @@ import { PeertalkChannel } from "./peertalk/channel.js";
 import { LookinRequestType } from "./peertalk/frame-types.js";
 import { InlineScalar } from "./peertalk/keyed-archiver.js";
 import { scanSimulatorPorts, scanUsbPorts } from "./connection/port-scanner.js";
+import { createSimulatorUdidResolver } from "./connection/simulator-resolver.js";
 import "./peertalk/schemas/index.js"; // side-effect: register all schema decoders
 
 import type { LookinHierarchyInfo } from "./peertalk/schemas/LookinHierarchyInfo.js";
@@ -154,13 +155,18 @@ export class LookinClient {
   private deviceManager: DeviceManager;
   private activePortKey: string | null = null;
   private cachedHierarchy: LookinHierarchyInfo | null = null;
+  /** portKey → booted-simulator UDID, filled in while scanning channels. */
+  private readonly simUdidByPortKey = new Map<string, string>();
+  private readonly resolveSimulatorUdid = createSimulatorUdidResolver();
 
   constructor() {
     this.connectionManager = new ConnectionManager({
       pingTimeoutMs: 1000,
       requestTimeoutMs: 15000,
     });
-    this.appRegistry = new AppRegistry(this.connectionManager);
+    this.appRegistry = new AppRegistry(this.connectionManager, {
+      resolveUdid: (portKey) => this.simUdidByPortKey.get(portKey) ?? "",
+    });
     this.deviceManager = new DeviceManager();
   }
 
@@ -179,7 +185,18 @@ export class LookinClient {
   async listApps(): Promise<InspectableApp[]> {
     // Ensure channels are established before listing
     await this.ensureChannels();
-    return this.appRegistry.listApps();
+    const apps = await this.appRegistry.listApps();
+    // Mark the connection reads are actually served from: with several
+    // simulators booted the apps are otherwise indistinguishable.
+    return apps.map((app) => ({
+      ...app,
+      isConnected: app.portKey === this.activePortKey,
+    }));
+  }
+
+  /** portKey that getHierarchy/getAttributes/getScreenshot currently read from. */
+  getActivePortKey(): string | null {
+    return this.activePortKey;
   }
 
   /**
@@ -188,6 +205,10 @@ export class LookinClient {
   async connectApp(
     portKey: string
   ): Promise<{ success: boolean; appName: string; message: string }> {
+    // Channels are created by the port scan; do it here too so connectApp works
+    // as a standalone entry point rather than requiring a prior listApps call.
+    await this.ensureChannels();
+
     const channel = this.connectionManager.getChannel(portKey);
     if (!channel) {
       throw new Error(
@@ -211,7 +232,14 @@ export class LookinClient {
   }
 
   /**
-   * Scan ports and automatically connect to the first available app.
+   * Scan ports and connect automatically — but only when exactly one
+   * LookinServer app answers.
+   *
+   * With several apps reachable, binding one of them is arbitrary and
+   * undetectable downstream: every app reports the same `appName` and screen
+   * size, so a caller reads another simulator's UI believing it is the target.
+   * In that case stay unconnected and let the caller choose from listApps(),
+   * which now reports each app's device UDID and marks the connected one.
    */
   async autoConnect(): Promise<void> {
     await this.ensureChannels();
@@ -221,20 +249,31 @@ export class LookinClient {
       throw new Error("No LookinServer instances found");
     }
 
-    // Try to ping each and connect to the first that succeeds
+    // Ping every channel; only respondents are live apps.
+    const live: string[] = [];
     for (const portKey of portKeys) {
       try {
         await this.connectionManager.ping(portKey);
-        this.activePortKey = portKey;
-        return;
+        live.push(portKey);
       } catch {
-        // Try next
+        // Not a LookinServer, or the app is in the background.
       }
     }
 
-    throw new Error(
-      "Found ports but all ping attempts failed — apps may be in background"
-    );
+    if (live.length === 0) {
+      throw new Error(
+        "Found ports but all ping attempts failed — apps may be in background"
+      );
+    }
+    if (live.length > 1) {
+      throw new Error(
+        `${live.length} apps are reachable (${live.join(", ")}); ` +
+          "automatic connection would be ambiguous. Call lookin_list_apps, " +
+          "then lookin_connect_app with an explicit portKey."
+      );
+    }
+
+    this.activePortKey = live[0];
   }
 
   // ────────────────────────────────────────────────────────
@@ -437,14 +476,24 @@ export class LookinClient {
 
     // Scan simulator ports
     const simPorts = await scanSimulatorPorts();
-    for (const sp of simPorts) {
-      const portKey = `sim:${sp.port}`;
-      if (!this.connectionManager.getChannel(portKey)) {
-        const channel = new PeertalkChannel();
-        channel.connect(sp.socket);
-        this.connectionManager.addChannel(portKey, channel);
-      }
-    }
+    await Promise.all(
+      simPorts.map(async (sp) => {
+        const portKey = `sim:${sp.port}`;
+        if (!this.connectionManager.getChannel(portKey)) {
+          const channel = new PeertalkChannel();
+          channel.connect(sp.socket);
+          this.connectionManager.addChannel(portKey, channel);
+        } else {
+          // Already registered — nothing took ownership of this probe socket.
+          sp.socket.destroy();
+        }
+        // Attribute the port to its booted simulator so callers can tell
+        // several simultaneous simulators apart. Best-effort; "" means the
+        // host-side lookup was unavailable.
+        const udid = await this.resolveSimulatorUdid(sp.port);
+        if (udid) this.simUdidByPortKey.set(portKey, udid);
+      })
+    );
 
     // Scan USB devices
     const devices = await this.deviceManager.listDevices();

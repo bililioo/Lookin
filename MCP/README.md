@@ -118,15 +118,22 @@ Lists booted iOS simulators and USB-connected iOS devices.
 
 `lookin_list_apps`
 
-Scans the LookinServer port ranges and lists running inspectable apps. The response includes the `portKey` needed for connection.
+Scans the LookinServer port ranges and lists running inspectable apps. Each app is reported with:
+
+- `portKey` — the identifier `lookin_connect_app` takes (e.g. `sim:47165`).
+- `udid` — the owning device, matching `lookin_list_devices`. Populated for simulators as well as USB devices, so two simultaneous simulators can be told apart. It stays `""` only when the host-side lookup is unavailable.
+- `isConnected` — `true` for the single app that read tools currently serve.
+- `deviceDescription` — the device name, for readability.
+
+The response also includes a top-level `activePortKey` (`null` when nothing is connected).
 
 `lookin_connect_app`
 
-Connects to one app by `portKey`.
+Connects to one app by `portKey`. Scans for channels first, so it works as a standalone entry point.
 
 `lookin_get_hierarchy`
 
-Returns the connected app's UI hierarchy. Each node includes `oid`, `className`, `frame`, and `children`. Pass an `oid` to the attribute or screenshot tools.
+Returns the connected app's UI hierarchy. Each node includes `oid`, `className`, `frame`, and `children`. The response names the `portKey` it came from. Pass an `oid` to the attribute or screenshot tools.
 
 `lookin_get_attributes`
 
@@ -142,6 +149,27 @@ Returns a base64 PNG/JPEG screenshot for a node by `oid`. If `oid` is omitted, t
 lookin_list_devices -> lookin_list_apps -> lookin_connect_app -> lookin_get_hierarchy -> lookin_get_attributes / lookin_get_screenshot
 ```
 
+## Several Simulators At Once
+
+Every LookinServer app answers with the same app name and screen size, so "which simulator answered" carries no information on its own. Two rules keep reads honest:
+
+- On startup the server auto-connects **only when exactly one app answers**. With two or more it stays unconnected and the read tools report that you must choose, rather than returning an arbitrary simulator's UI.
+- `lookin_list_apps` reports each app's device `udid` and marks the connected one. Confirm `activePortKey` before reading, or call `lookin_connect_app` with the intended `portKey`.
+
+The device behind a port is resolved from the process holding the listening socket (its bundle path contains `CoreSimulator/Devices/<UDID>/`). This is a macOS-only lookup; if it is unavailable the `udid` degrades to `""` and everything else keeps working.
+
+## Tests
+
+Manual scripts, run with `tsx` against a booted simulator:
+
+```bash
+npx tsx test/test-e2e.ts                  # protocol round trip against a live app
+npx tsx test/test-device-attribution.ts   # device attribution and ambiguity guard
+npx tsx test/test-connection.ts
+npx tsx test/test-ping.ts
+npx tsx test/test-unarchive.ts
+```
+
 ## Notes
 
 Simulator apps are reached through `127.0.0.1:47164-47169`.
@@ -149,6 +177,8 @@ Simulator apps are reached through `127.0.0.1:47164-47169`.
 USB device apps are reached through usbmuxd on ports `47175-47179`.
 
 The MCP server does not replace LookinServer. The target iOS app must be running and must include LookinServer in a Debug build.
+
+This server speaks LookinServer's own Peertalk protocol. It is **not** interchangeable with HTTP-based MCP servers that scan ports `47190-47199` and expect `/status`, `/hierarchy` and `/properties` — those will report that LookinServer is missing even while this one connects fine. Point your MCP client at this server's `dist/index.js`.
 
 To use this MCP server together with the Lookin macOS app, make sure the iOS app uses a multi-client-capable LookinServer. Older LookinServer versions may keep only the latest connection, causing the Lookin app and MCP server to disconnect each other.
 

@@ -14,7 +14,11 @@ import type { LookinAppInfo } from "../peertalk/schemas/LookinAppInfo.js";
 export interface InspectableApp {
   /** Stable channel identifier, e.g. "sim:47164" or "usb:<udid>:47175". */
   portKey: string;
-  /** Device UDID (simulator devices also have one). */
+  /**
+   * Device UDID, matching the `udid` from `lookin_list_devices`. Populated for
+   * simulators as well as USB devices; stays "" only when the host-side lookup
+   * is unavailable.
+   */
   udid: string;
   appName: string;
   bundleId: string;
@@ -24,16 +28,21 @@ export interface InspectableApp {
   screenScale: number;
   /** True if the underlying channel is still registered with ConnectionManager. */
   isActive: boolean;
+  /**
+   * True for the single portKey the client is currently reading from. Filled in
+   * by `LookinClient`, which owns the active-connection state — with several
+   * simulators booted, every app otherwise looks alike.
+   */
+  isConnected?: boolean;
 }
 
 export interface AppRegistryOptions {
   /**
-   * Override how a portKey maps to a UDID. Useful when the caller already
-   * tracks (portKey → udid) externally (e.g. via DeviceManager).
+   * Map a portKey to a device UDID.
    *
-   * If omitted, falls back to extracting UDID from portKeys of the form
-   * `usb:<udid>:<port>`; for simulator portKeys (`sim:<port>`) the UDID is
-   * left empty unless provided here.
+   * LookinClient supplies this so simulator channels resolve to their booted
+   * simulator; see `connection/simulator-resolver.ts`. If omitted, the UDID is
+   * extracted from `usb:<udid>:<port>` portKeys and is empty for `sim:<port>`.
    */
   resolveUdid?: (portKey: string) => string;
 }

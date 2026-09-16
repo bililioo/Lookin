@@ -49,6 +49,9 @@ export async function handleGetHierarchy(
 
   return JSON.stringify({
     appName: result.appName,
+    // Names the device this tree came from: with several simulators booted,
+    // apps are indistinguishable by name and screen size alone.
+    portKey: client.getActivePortKey(),
     totalViews: countItems(items),
     hierarchy: items,
   });
