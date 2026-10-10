@@ -471,9 +471,6 @@ export class LookinClient {
    * discovered socket, and register them with the ConnectionManager.
    */
   private async ensureChannels(): Promise<void> {
-    const existingKeys = this.connectionManager.getActivePortKeys();
-    if (existingKeys.length > 0) return; // Already have channels
-
     // Scan simulator ports
     const simPorts = await scanSimulatorPorts();
     await Promise.all(
