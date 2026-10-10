@@ -25,6 +25,7 @@
 #import "LKStaticAsyncUpdateManager.h"
 #import "LKTutorialManager.h"
 #import "LookinHierarchyFile.h"
+#import "LookinAppInfo.h"
 #import "LKPreviewView.h"
 #import "LKHierarchyView.h"
 #import "LKPerformanceReporter.h"
@@ -42,6 +43,7 @@
 /// 当拉取 hierarchy 和更新截图时，该属性为 YES
 @property(nonatomic, assign) BOOL isFetchingHierarchy;
 @property(nonatomic, assign) BOOL isFetchingDetails;
+@property(nonatomic, copy) NSArray<LookinAppInfo *> *popoverAppInfos;
 
 @end
 
@@ -105,10 +107,18 @@
 
 - (void)popupAllInspectableAppsWithSource:(MenuPopoverAppsListControllerEventSource)source {
     NSView *appItemView = [self.toolbarItemsMap objectForKey:LKToolBarIdentifier_App].view;
+    NSMutableArray<LookinAppInfo *> *localInfos = [NSMutableArray arrayWithArray:self.popoverAppInfos ?: @[]];
+    LookinAppInfo *inspectingAppInfo = [LKAppsManager sharedInstance].inspectingApp.appInfo;
+    if (inspectingAppInfo) {
+        [localInfos addObject:inspectingAppInfo];
+    }
     
     @weakify(self);
-    [[[[LKAppsManager sharedInstance] fetchAppInfosWithImage:YES localInfos:nil] deliverOnMainThread] subscribeNext:^(NSArray<LKInspectableApp *> *apps) {
+    [[[[LKAppsManager sharedInstance] fetchAppInfosWithImage:NO localInfos:localInfos] deliverOnMainThread] subscribeNext:^(NSArray<LKInspectableApp *> *apps) {
         @strongify(self);
+        self.popoverAppInfos = [apps lookin_map:^id(NSUInteger idx, LKInspectableApp *value) {
+            return value.appInfo;
+        }];
         LKMenuPopoverAppsListController *vc = [[LKMenuPopoverAppsListController alloc] initWithApps:apps source:source];
         NSPopover *popover = [[NSPopover alloc] init];
         @weakify(popover);
@@ -130,6 +140,7 @@
                 
                 [[[app fetchHierarchyData] deliverOnMainThread] subscribeNext:^(LookinHierarchyInfo *info) {
                     [self.viewController.progressView finishWithCompletion:nil];
+                    app.appInfo = info.appInfo;
                     [LKAppsManager sharedInstance].inspectingApp = app;
                     [[LKStaticHierarchyDataSource sharedInstance] reloadWithHierarchyInfo:info keepState:isTheSameApp];
                     

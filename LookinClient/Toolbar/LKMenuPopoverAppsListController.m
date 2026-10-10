@@ -43,7 +43,7 @@
             if (apps.count == 0) {
                 subtitle = NSLocalizedString(@"And no inspectable app was found", nil);
             } else if (apps.count == 1) {
-                subtitle = NSLocalizedString(@"Click the screenshot below to Change App", nil);
+                subtitle = NSLocalizedString(@"Click an app below to Change App", nil);
             } else {
                 subtitle = [NSString stringWithFormat:NSLocalizedString(@"Other %@ apps were found", nil), @(apps.count)];
             }
@@ -55,7 +55,7 @@
                 } else {
                     title = [NSString stringWithFormat:NSLocalizedString(@"%@ active apps were found", nil), @(apps.count)];
                 }
-                subtitle = NSLocalizedString(@"Click the screenshot below to inspect", nil);
+                subtitle = NSLocalizedString(@"Click an app below to inspect", nil);
             } else {
                 title = NSLocalizedString(@"No inspectable app was found", nil);
             }

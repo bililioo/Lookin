@@ -12,9 +12,11 @@
 "1 active app was found" = "1 active app was found";
 "%@ active apps were found" = "%@ active apps were found";
 "Click the screenshot below to inspect" = "Click the screenshot below to inspect";
+"Click an app below to inspect" = "Click an app below to inspect";
 "Connection lost" = "Connection lost";
 "And no inspectable app was found" = "And no inspectable app was found";
 "Click the screenshot below to Change App" = "Click the screenshot below to Change App";
+"Click an app below to Change App" = "Click an app below to Change App";
 "Other %@ apps were found" = "Other %@ apps were found";
 "No inspectable app was found" = "No inspectable app was found";
 

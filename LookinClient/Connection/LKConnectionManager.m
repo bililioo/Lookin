@@ -161,21 +161,25 @@ static NSIndexSet * PushFrameTypeList() {
         }
         
         Lookin_PTChannel *localChannel = [Lookin_PTChannel channelWithDelegate:self];
-        [localChannel connectToPort:port.portNumber IPv4Address:INADDR_LOOPBACK callback:^(NSError *error, Lookin_PTAddress *address) {
-            if (error) {
-                if (error.domain == NSPOSIXErrorDomain && (error.code == ECONNREFUSED || error.code == ETIMEDOUT)) {
-                    // 没有 iOS 客户端
-                } else {
-                    // 意外
-                }
-                [localChannel close];
-                [subscriber sendError:error];
-            } else {
-                port.connectedChannel = localChannel;
-                [subscriber sendNext:localChannel];
-                [subscriber sendCompleted];
-            }
-        }];
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+            [localChannel connectToPort:port.portNumber IPv4Address:INADDR_LOOPBACK callback:^(NSError *error, Lookin_PTAddress *address) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (error) {
+                        if (error.domain == NSPOSIXErrorDomain && (error.code == ECONNREFUSED || error.code == ETIMEDOUT)) {
+                            // 没有 iOS 客户端
+                        } else {
+                            // 意外
+                        }
+                        [localChannel close];
+                        [subscriber sendError:error];
+                    } else {
+                        port.connectedChannel = localChannel;
+                        [subscriber sendNext:localChannel];
+                        [subscriber sendCompleted];
+                    }
+                });
+            }];
+        });
         return nil;
     }];
 }
@@ -264,7 +268,8 @@ static NSIndexSet * PushFrameTypeList() {
                 [subscriber sendError:versionErr];
             } else {
                 // 没问题，开始发真正请求
-                [self _requestWithType:requestType channel:channel data:requestData timeoutInterval:5 succ:^(id responseData) {
+                NSTimeInterval requestTimeoutInterval = (requestType == LookinRequestTypeApp) ? 1.5 : 5;
+                [self _requestWithType:requestType channel:channel data:requestData timeoutInterval:requestTimeoutInterval succ:^(id responseData) {
                     RACTuple *tupleResult = [RACTuple tupleWithObjects:responseData, channel, nil];
                     [subscriber sendNext:tupleResult];
                 } fail:^(NSError *error) {

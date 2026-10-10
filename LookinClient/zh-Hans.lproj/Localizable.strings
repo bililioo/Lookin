@@ -12,10 +12,12 @@
 "1 active app was found" = "找到 1 个活跃的 iOS App";
 "%@ active apps were found" = "共找到 %@ 个活跃的 iOS App";
 "Click the screenshot below to inspect" = "点击下列图像进入";
+"Click an app below to inspect" = "点击下列 App 进入";
 "Connection lost" = "当前连接已断开";
 "And no inspectable app was found" = "且未发现任何可以连接的 iOS App";
 "Click the screenshot below to Change App" = "但找到另一个 iOS App，点击下列图像进入";
-"Other %@ apps were found" = "但找到其它 %@ 个 iOS App，点击下列图像进入";
+"Click an app below to Change App" = "但找到另一个 iOS App，点击下列 App 进入";
+"Other %@ apps were found" = "但找到其它 %@ 个 iOS App，点击下列 App 进入";
 "No inspectable app was found" = "没有发现任何可以连接的 iOS App";
 
 "Preferences" = "偏好设置";
