@@ -17,15 +17,28 @@ Never integrate LookinServer in Release building configuration.
 ### Objective-C Project
 `pod 'LookinServer', :configurations => ['Debug']`
 ## via Swift Package Manager:
-`https://github.com/QMUI/LookinServer/`
+
+This repository contains the macOS client and MCP server. Add the separate **LookinServer** package to your iOS app to use it with Lookin. Both Swift and Objective-C projects are supported.
+
+1. In Xcode, choose **File → Add Package Dependencies**.
+2. Enter the package URL:
+
+   ```text
+   https://github.com/bililioo/LookinServer.git
+   ```
+
+3. Choose **Branch** as the dependency rule and enter `develop` (lowercase).
+4. Add the **LookinServer** library product to your iOS app target, then build and run in **Debug**.
 
 # MCP
 This repository also contains a Lookin MCP server under [`MCP/`](MCP/). It lets Codex or another MCP client inspect an iOS app through LookinServer. See the [English MCP guide](MCP/README.md) or [中文 MCP 使用说明](MCP/README_zh.md) for build and Codex configuration.
 
 # Repository
-LookinServer: https://github.com/QMUI/LookinServer
+LookinServer: https://github.com/bililioo/LookinServer
 
-macOS app: https://github.com/hughkli/Lookin/
+macOS app: https://github.com/bililioo/Lookin
+
+Upstream repositories: [QMUI/LookinServer](https://github.com/QMUI/LookinServer) and [hughkli/Lookin](https://github.com/hughkli/Lookin).
 
 # Tips
 - How to display custom information in Lookin: https://bytedance.larkoffice.com/docx/TRridRXeUoErMTxs94bcnGchnlb
@@ -56,16 +69,29 @@ Lookin 可以查看与修改 iOS App 里的 UI 对象，类似于 Xcode 自带�
 `pod 'LookinServer', :configurations => ['Debug']`
 
 ## 通过 Swift Package Manager:
-`https://github.com/QMUI/LookinServer/`
+
+本仓库包含 macOS 客户端和 MCP 服务。使用时，需要将独立的 **LookinServer** 包添加到 iOS App 中，Swift 和 Objective-C 项目均支持。
+
+1. 在 Xcode 中选择 **File → Add Package Dependencies**。
+2. 输入包地址：
+
+   ```text
+   https://github.com/bililioo/LookinServer.git
+   ```
+
+3. 依赖规则选择 **Branch**，填写 `develop`（全小写）。
+4. 将 **LookinServer** 库产品添加到 iOS App target，然后以 **Debug** 配置编译运行。
 
 # MCP
 本仓库也包含一个 Lookin MCP 服务，位于 [`MCP/`](MCP/)。它可以让 Codex 或其他 MCP 客户端通过 LookinServer 检查 iOS App。构建和 Codex 配置方式见 [中文 MCP 使用说明](MCP/README_zh.md)，也可以看 [English MCP guide](MCP/README.md)。
 
 # 源代码仓库
 
-iOS 端 LookinServer：https://github.com/QMUI/LookinServer
+iOS 端 LookinServer：https://github.com/bililioo/LookinServer
 
-macOS 端软件：https://github.com/hughkli/Lookin/
+macOS 端软件：https://github.com/bililioo/Lookin
+
+上游仓库：[QMUI/LookinServer](https://github.com/QMUI/LookinServer) 和 [hughkli/Lookin](https://github.com/hughkli/Lookin)。
 
 # 技巧
 - 如何在 Lookin 中展示自定义信息: https://bytedance.larkoffice.com/docx/TRridRXeUoErMTxs94bcnGchnlb
